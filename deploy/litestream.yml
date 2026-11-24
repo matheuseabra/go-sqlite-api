@@ -1,0 +1,9 @@
+dbs:
+  - path: /var/lib/go-sqlite-api/api.db
+    replicas:
+      - type: s3
+        bucket: ${LITESTREAM_BUCKET}
+        path: go-sqlite-api
+        endpoint: ${LITESTREAM_ENDPOINT}
+        region: auto
+        sync-interval: 10s

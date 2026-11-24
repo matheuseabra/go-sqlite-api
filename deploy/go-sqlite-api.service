@@ -1,0 +1,22 @@
+[Unit]
+Description=Go SQLite API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=go-sqlite-api
+Group=go-sqlite-api
+WorkingDirectory=/var/lib/go-sqlite-api
+Environment=API_ADDR=:8080
+Environment=API_DB_PATH=/var/lib/go-sqlite-api/api.db
+ExecStart=/usr/local/bin/go-sqlite-api
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/go-sqlite-api
+
+[Install]
+WantedBy=multi-user.target
