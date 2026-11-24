@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type account struct {
@@ -12,11 +13,16 @@ type account struct {
 	balance int64
 }
 
+type rateCounter struct {
+	window atomic.Int64
+	hits   atomic.Uint64
+}
+
 type State struct {
 	config   atomic.Value // map[string]string; replace snapshots, never mutate them.
 	routes   atomic.Value // map[string]string; replace snapshots, never mutate them.
 	accounts sync.Map     // map[string]*account
-	rate     sync.Map     // map[string]*atomic.Uint64
+	rate     sync.Map     // map[string]*rateCounter
 }
 
 func New() *State {
@@ -31,9 +37,22 @@ func (s *State) Route(name string) (string, bool) {
 	v, ok := s.routes.Load().(map[string]string)[name]
 	return v, ok
 }
-func (s *State) Hit(key string) uint64 {
-	v, _ := s.rate.LoadOrStore(key, &atomic.Uint64{})
-	return v.(*atomic.Uint64).Add(1)
+
+// Allow applies a fixed one-minute in-memory limit. It is intentionally local
+// to one process; use an edge proxy for a distributed rate limit.
+func (s *State) Allow(key string, limit uint64, now time.Time) bool {
+	v, _ := s.rate.LoadOrStore(key, &rateCounter{})
+	counter := v.(*rateCounter)
+	window := now.Unix() / 60
+	for {
+		observed := counter.window.Load()
+		if observed == window {
+			return counter.hits.Add(1) <= limit
+		}
+		if counter.window.CompareAndSwap(observed, window) {
+			counter.hits.Store(0)
+		}
+	}
 }
 
 func (s *State) SetBalance(id string, balance int64) {

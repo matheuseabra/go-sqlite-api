@@ -1,0 +1,16 @@
+# Local runtime data
+/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Local configuration and editor files
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# Go build outputs
+/go-sqlite-api
+/api
+coverage.out

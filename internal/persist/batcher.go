@@ -40,6 +40,9 @@ func (b *Batcher) Enqueue(ctx context.Context, e Event) error {
 	if !b.accepting.Load() {
 		return errors.New("persistence queue is shutting down")
 	}
+	if err := b.failure(); err != nil {
+		return fmt.Errorf("persistence queue is unhealthy: %w", err)
+	}
 	select {
 	case b.queue <- e:
 		return nil

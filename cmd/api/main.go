@@ -46,7 +46,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("load embedded assets: %v", err)
 	}
-	server := &http.Server{Addr: addr, Handler: httpapi.New(hotState, writes, static).Handler(), ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 120 * time.Second}
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           httpapi.New(hotState, writes, static).Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    16 << 10,
+	}
 	go func() {
 		log.Printf("listening on %s", addr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
